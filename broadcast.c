@@ -1,41 +1,59 @@
 #include <stdio.h>
 #include <mpi.h>
 
-int check_pow2(int x);
+void broadcast_p0_pow2(int * x, MPI_Comm comm);
+int inf_pow2(int id);
 
 int main (int argc, char ** argv) {
 
-printf("0 %i\n", check_pow2(0));
-printf("0 %i\n", check_pow2(1));
-printf("1 %i\n", check_pow2(2));
-printf("0 %i\n", check_pow2(3));
-printf("1 %i\n", check_pow2(4));
-printf("1 %i\n", check_pow2(8));
-printf("0 %i\n", check_pow2(10));
-printf("1 %i\n", check_pow2(16));
-printf("1 %i\n", check_pow2(32));
+MPI_Init(&argc, &argv);
 
+int id, p, x;
 
+MPI_Comm_rank(MPI_COMM_WORLD, &id);
+MPI_Comm_size(MPI_COMM_WORLD, &p);
 
-return 0;
+if (!id) x = 123456;
+
+broadcast_p0_pow2(&x, MPI_COMM_WORLD);
+
+printf("Process %i: %i\n", id, x);
 }
 
-void broadcard_p0_pow2(int * x, MPI_COMM comm) {
-
-
+void broadcast_p0_pow2(int * x, MPI_Comm comm) {
 
 int id, p;
 
-MPI_Get_rank(&id, comm);
-MPI_Get_size(&p, comm);
+MPI_Comm_rank(comm, &id);
+MPI_Comm_size(comm, &p);
 
-if (!check_pow2(p)) return 1;
+int offset;
+MPI_Status status;
 
+if (id) {
+	offset = inf_pow2(id);
+	MPI_Recv(x, 1, MPI_INT, id - offset, MPI_ANY_TAG, comm, &status);
+	offset = offset << 1; 
+} else {
+	offset = 1;
 }
 
-int check_pow2(int x) {
-if (!x || ((x & 1) == 1)) return 0;
-while((x & 1) != 1) x = x >> 1;
-return x >> 1 ? 0 : 1;
+int target = id + offset;
+while (target < p) {
+	MPI_Send(x, 1, MPI_INT, target, 0, comm);
+	offset = offset << 1;
+	target = id + offset;
 
+}
+}
+
+// Calculates the inferior power of 2 (inclusive)
+// Returns 0 if input is <= 0
+int inf_pow2(int id) {
+int ct = -1;
+while (id) {
+	id = id >> 1;
+	ct++;
+}
+return ct >= 0 ? 1 << ct : 0;
 }
