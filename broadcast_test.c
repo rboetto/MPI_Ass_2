@@ -27,14 +27,7 @@ int main (int argc, char ** argv) {
 
 	for (int i = 1; i < argc; i++) {
 
-		if (strcmp(*(argv+i), "all") == 0) {
-			if (i > 1) continue;
-			run_test_suite01();
-			run_test_suite02();
-			run_test_suite03();
-			break;
-		}
-		else if (strcmp(*(argv+i), "broadcast_p0_pow2") == 0) {
+		if (strcmp(*(argv+i), "broadcast_p0_pow2") == 0) {
 			run_test_suite01();
 		}
 		else if (strcmp(*(argv+i), "broadcast_pow2") == 0) {
